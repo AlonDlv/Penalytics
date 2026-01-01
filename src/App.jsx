@@ -1,9 +1,27 @@
 import { useState, useEffect } from 'react';
+import Analytics from './Analytics'; // Import the new page
 
-// --- Constants ---
-const LOCATIONS = ['Bed', 'Shower', 'Toilet', 'Public'];
-const MOODS_BEFORE = ['Horny', 'Stressed', 'Bored', 'Lonely', 'Anxious', 'Tired'];
-const MOODS_AFTER = ['Relaxed', 'Regret', 'Sleepy', 'Energetic', 'Shameful', 'Satisfied', 'Other'];
+// --- Constants & Emojis ---
+const LOCATIONS = ['Bed', 'Shower', 'Toilet', 'Court', 'Funeral', 'Dentist', 'Church', 'Other'];
+
+const MOODS_BEFORE = {
+  'Horny': '🔥',
+  'Stressed': '🤯',
+  'Bored': '😐',
+  'Lonely': '🥀',
+  'Anxious': '😰',
+  'Tired': '💤'
+};
+
+const MOODS_AFTER = {
+  'Relaxed': '😌',
+  'Regret': '😓',
+  'Sleepy': '😴',
+  'Energetic': '⚡',
+  'Shameful': '🫣',
+  'Satisfied': '✨',
+  'Other': 'QA'
+};
 
 // --- Components ---
 
@@ -21,9 +39,8 @@ const Login = ({ onLogin }) => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-indigo-200 p-6">
       <div className="bg-white/60 backdrop-blur-md p-10 rounded-3xl shadow-xl border-2 border-white w-full max-w-sm flex flex-col items-center gap-6">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-center leading-tight drop-shadow-sm">
-          Welcome back big daddy
+          Welcome back big daddy 🌈
         </h1>
-        
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <input
             type="password"
@@ -46,11 +63,16 @@ const Login = ({ onLogin }) => {
 const TagInput = ({ tags, setTags }) => {
   const [input, setInput] = useState('');
 
-  const handleKeyDown = (e) => {
-    if (e.key === ' ' && input.trim()) {
-      e.preventDefault();
-      if (!tags.includes(input.trim())) setTags([...tags, input.trim()]);
+  const handleChange = (e) => {
+    const val = e.target.value;
+    if (val.endsWith(' ')) {
+      const newTag = val.trim();
+      if (newTag && !tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+      }
       setInput('');
+    } else {
+      setInput(val);
     }
   };
 
@@ -66,9 +88,8 @@ const TagInput = ({ tags, setTags }) => {
       <input
         type="text"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type tag & space..."
+        onChange={handleChange}
+        placeholder="Type tag & hit Space..."
         className="bg-purple-50 p-3 rounded-xl border-2 border-purple-100 focus:border-purple-300 focus:bg-white outline-none text-purple-700 placeholder-purple-300 transition-all"
       />
     </div>
@@ -87,8 +108,9 @@ const LogForm = ({ onSave, onCancel }) => {
     genreTags: [],
     videoCount: 0,
     moodBefore: 'Horny',
-    horninessLevel: 3,
+    ratingBefore: 3,
     moodAfter: 'Relaxed',
+    ratingAfter: 3,
     moodAfterDetail: '',
     satisfaction: 5,
   });
@@ -120,7 +142,7 @@ const LogForm = ({ onSave, onCancel }) => {
             <button
               key={loc} type="button"
               onClick={() => handleChange('location', loc)}
-              className={`p-3 rounded-xl font-bold transition-all ${
+              className={`p-3 rounded-xl font-bold transition-all text-sm ${
                 formData.location === loc 
                   ? 'bg-pink-400 text-white shadow-md transform scale-105' 
                   : 'bg-white text-pink-300 hover:bg-pink-100'
@@ -130,7 +152,7 @@ const LogForm = ({ onSave, onCancel }) => {
             </button>
           ))}
         </div>
-        {formData.location === 'Public' && (
+        {formData.location === 'Other' && (
           <input 
             type="text" placeholder="Where exactly? 👀" 
             className="mt-3 w-full bg-white p-3 rounded-xl border-2 border-pink-200 outline-none text-pink-600"
@@ -166,33 +188,38 @@ const LogForm = ({ onSave, onCancel }) => {
         </div>
       )}
 
-      {/* Moods */}
+      {/* Moods Container (FIXED LAYOUT) */}
       <div className="grid grid-cols-2 gap-4">
+        {/* Moods Before */}
         <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-100">
           <span className="text-orange-400 text-sm font-bold block mb-2">Before</span>
-          <select className="w-full bg-white p-2 rounded-xl text-orange-500 border border-orange-200 outline-none"
+          <select className="w-full bg-white p-2 rounded-xl text-orange-500 border border-orange-200 outline-none mb-3"
             value={formData.moodBefore} onChange={e => handleChange('moodBefore', e.target.value)}>
-            {MOODS_BEFORE.map(m => <option key={m} value={m}>{m}</option>)}
+            {Object.keys(MOODS_BEFORE).map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          {formData.moodBefore === 'Horny' && (
-            <div className="mt-3">
-              <input type="range" min="1" max="5" className="w-full accent-orange-400"
-                value={formData.horninessLevel} onChange={e => handleChange('horninessLevel', e.target.value)} />
-              <div className="text-center text-orange-400 font-bold text-sm">🔥 Level {formData.horninessLevel}</div>
-            </div>
-          )}
+          <input type="range" min="1" max="5" className="w-full accent-orange-400"
+            value={formData.ratingBefore} onChange={e => handleChange('ratingBefore', e.target.value)} />
+          <div className="text-center text-orange-400 font-bold text-sm mt-1">
+            {MOODS_BEFORE[formData.moodBefore]} Lvl {formData.ratingBefore}
+          </div>
         </div>
 
+        {/* Moods After */}
         <div className="bg-green-50 p-4 rounded-2xl border-2 border-green-100">
           <span className="text-green-400 text-sm font-bold block mb-2">After</span>
-          <select className="w-full bg-white p-2 rounded-xl text-green-500 border border-green-200 outline-none"
+          <select className="w-full bg-white p-2 rounded-xl text-green-500 border border-green-200 outline-none mb-3"
             value={formData.moodAfter} onChange={e => handleChange('moodAfter', e.target.value)}>
-            {MOODS_AFTER.map(m => <option key={m} value={m}>{m}</option>)}
+            {Object.keys(MOODS_AFTER).map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           {formData.moodAfter === 'Other' && (
-             <input type="text" placeholder="..." className="mt-2 w-full bg-white p-1 rounded border border-green-200 text-sm"
-             value={formData.moodAfterDetail} onChange={e => handleChange('moodAfterDetail', e.target.value)} />
+            <input type="text" placeholder="Specify..." className="w-full bg-white p-2 mb-3 rounded-xl border border-green-200 text-sm outline-none"
+            value={formData.moodAfterDetail} onChange={e => handleChange('moodAfterDetail', e.target.value)} />
           )}
+          <input type="range" min="1" max="5" className="w-full accent-green-400"
+            value={formData.ratingAfter} onChange={e => handleChange('ratingAfter', e.target.value)} />
+          <div className="text-center text-green-500 font-bold text-sm mt-1">
+            {MOODS_AFTER[formData.moodAfter] || '❓'} Lvl {formData.ratingAfter}
+          </div>
         </div>
       </div>
 
@@ -218,7 +245,7 @@ const LogForm = ({ onSave, onCancel }) => {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [view, setView] = useState('dashboard');
+  const [view, setView] = useState('dashboard'); // dashboard | form | analytics
   const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('penalytics_logs')) || []);
 
   useEffect(() => localStorage.setItem('penalytics_logs', JSON.stringify(logs)), [logs]);
@@ -228,7 +255,21 @@ export default function App() {
     setView('dashboard');
   };
 
+  const deleteLog = (id) => {
+    if (confirm("Delete this log? 🗑️")) {
+      setLogs(logs.filter(log => log.id !== id));
+    }
+  };
+
   if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
+
+  if (view === 'analytics') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 text-slate-600 flex flex-col items-center py-10 px-4 font-sans">
+        <Analytics logs={logs} onBack={() => setView('dashboard')} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 text-slate-600 flex flex-col items-center py-10 px-4 font-sans">
@@ -236,15 +277,23 @@ export default function App() {
       {view === 'dashboard' && (
         <>
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-8 tracking-tight drop-shadow-sm">
-            Penalytics
+            Penalytics 🍭
           </h1>
           
-          <button 
-            onClick={() => setView('form')}
-            className="bg-white text-purple-500 text-xl font-bold py-5 px-10 rounded-3xl shadow-xl border-4 border-purple-100 hover:border-purple-300 hover:scale-105 transition-all cursor-pointer mb-12 flex items-center gap-2"
-          >
-            <span>✨</span> Log New Fap <span>✨</span>
-          </button>
+          <div className="flex gap-4 mb-12">
+            <button 
+              onClick={() => setView('form')}
+              className="bg-white text-purple-500 text-xl font-bold py-5 px-8 rounded-3xl shadow-xl border-4 border-purple-100 hover:border-purple-300 hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <span>✨</span> Log New
+            </button>
+            <button 
+              onClick={() => setView('analytics')}
+              className="bg-white text-blue-400 text-xl font-bold py-5 px-6 rounded-3xl shadow-xl border-4 border-blue-100 hover:border-blue-300 hover:scale-105 transition-all cursor-pointer"
+            >
+              📊 Stats
+            </button>
+          </div>
 
           <div className="w-full max-w-md">
             <h3 className="text-purple-300 font-bold text-sm uppercase tracking-wider mb-4 text-center">Your History ({logs.length})</h3>
@@ -254,12 +303,18 @@ export default function App() {
                   No logs yet! Get busy! 😜
                 </div>
               )}
-              {logs.map((log, i) => (
-                <div key={log.id} className={`p-5 rounded-3xl border-2 flex flex-col gap-2 shadow-sm bg-white border-purple-100`}>
-                  <div className="flex justify-between items-center">
+              {logs.map((log) => (
+                <div key={log.id} className="p-5 rounded-3xl border-2 flex flex-col gap-2 shadow-sm bg-white border-purple-100 relative group">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); deleteLog(log.id); }}
+                    className="absolute top-3 right-3 text-slate-300 hover:text-red-400 p-1 transition-colors cursor-pointer"
+                  >
+                    🗑️
+                  </button>
+                  <div className="flex justify-between items-center pr-8">
                     <span className="font-bold text-slate-600">{new Date(log.timestamp).toLocaleDateString()}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full font-bold bg-blue-100 text-blue-500`}>
-                      {new Date(log.timestamp).getHours() < 12 ? 'Morning ☀️' : new Date(log.timestamp).getHours() < 18 ? 'Noon 🌤️' : 'Night 🌙'}
+                    <span className="text-xs px-2 py-1 rounded-full font-bold bg-blue-100 text-blue-500">
+                      {MOODS_BEFORE[log.moodBefore] || '❓'} ➜ {MOODS_AFTER[log.moodAfter] || '❓'}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm text-slate-400 font-medium">
