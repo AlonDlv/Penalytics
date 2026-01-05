@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import Analytics from './Analytics'; // Import the new page
+import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import axios from 'axios';
+import Analytics from './Analytics';
+
+// --- Configuration ---
+const API_URL = 'http://127.0.0.1:8000';
 
 // --- Constants & Emojis ---
 const LOCATIONS = ['Bed', 'Shower', 'Toilet', 'Court', 'Funeral', 'Dentist', 'Church', 'Other'];
@@ -23,16 +28,78 @@ const MOODS_AFTER = {
   'Other': 'QA'
 };
 
-// --- Components ---
+// --- Auth Components ---
 
-const Login = ({ onLogin }) => {
-  const [pass, setPass] = useState('');
-  const [error, setError] = useState(false);
+const Register = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (pass === '1234') onLogin();
-    else setError(true);
+    try {
+      await axios.post(`${API_URL}/register`, { username, password });
+      alert('Account created! Please log in. 🌈');
+      navigate('/login');
+    } catch (err) {
+      setError('Username taken or error occurred 😔');
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-indigo-200 p-6">
+      <div className="bg-white/60 backdrop-blur-md p-10 rounded-3xl shadow-xl border-2 border-white w-full max-w-sm flex flex-col items-center gap-6">
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-center leading-tight">
+          New Player? 🐣
+        </h1>
+        <form onSubmit={handleRegister} className="w-full flex flex-col gap-4">
+          <input
+            type="text" placeholder="Username"
+            className="bg-white/80 border-2 border-pink-200 rounded-2xl p-4 text-center text-purple-700 outline-none focus:border-purple-400"
+            value={username} onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            type="password" placeholder="Password"
+            className="bg-white/80 border-2 border-pink-200 rounded-2xl p-4 text-center text-purple-700 outline-none focus:border-purple-400"
+            value={password} onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit" className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all cursor-pointer">
+            ✨ Sign Up ✨
+          </button>
+          {error && <p className="text-red-400 text-center font-bold">{error}</p>}
+          <p onClick={() => navigate('/login')} className="text-center text-purple-400 cursor-pointer hover:underline text-sm font-bold">
+            Already have an account? Login
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const Login = ({ setToken }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      // Form Data format for OAuth2
+      const params = new URLSearchParams();
+      params.append('username', username);
+      params.append('password', password);
+
+      const response = await axios.post(`${API_URL}/token`, params);
+      
+      const token = response.data.access_token;
+      setToken(token);
+      localStorage.setItem('penalytics_token', token);
+      navigate('/');
+    } catch (err) {
+      setError('Wrong credentials! 🥺');
+    }
   };
 
   return (
@@ -41,24 +108,31 @@ const Login = ({ onLogin }) => {
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-center leading-tight drop-shadow-sm">
           Welcome back big daddy 🌈
         </h1>
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+        <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
           <input
-            type="password"
-            placeholder="Password..."
-            className="bg-white/80 border-2 border-pink-200 rounded-2xl p-4 text-center text-purple-700 placeholder-purple-300 focus:outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition-all shadow-inner"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            autoFocus
+            type="text" placeholder="Username..."
+            className="bg-white/80 border-2 border-pink-200 rounded-2xl p-4 text-center text-purple-700 placeholder-purple-300 focus:outline-none focus:border-purple-400 transition-all"
+            value={username} onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            type="password" placeholder="Password..."
+            className="bg-white/80 border-2 border-pink-200 rounded-2xl p-4 text-center text-purple-700 placeholder-purple-300 focus:outline-none focus:border-purple-400 transition-all"
+            value={password} onChange={(e) => setPassword(e.target.value)}
           />
           <button type="submit" className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-200 active:scale-95 transition-all cursor-pointer">
             ✨ Enter ✨
           </button>
-          {error && <p className="text-red-400 text-center font-bold bg-red-50 p-2 rounded-lg">Wrong password! 🥺</p>}
+          {error && <p className="text-red-400 text-center font-bold bg-red-50 p-2 rounded-lg">{error}</p>}
+          <p onClick={() => navigate('/register')} className="text-center text-purple-400 cursor-pointer hover:underline text-sm font-bold">
+            New here? Register
+          </p>
         </form>
       </div>
     </div>
   );
 };
+
+// --- Dashboard & Form Components (Preserved) ---
 
 const TagInput = ({ tags, setTags }) => {
   const [input, setInput] = useState('');
@@ -188,7 +262,7 @@ const LogForm = ({ onSave, onCancel }) => {
         </div>
       )}
 
-      {/* Moods Container (FIXED LAYOUT) */}
+      {/* Moods Container */}
       <div className="grid grid-cols-2 gap-4">
         {/* Moods Before */}
         <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-100">
@@ -241,16 +315,17 @@ const LogForm = ({ onSave, onCancel }) => {
   );
 };
 
-// --- Main App ---
-
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// --- Main Dashboard Logic ---
+const Dashboard = ({ token, onLogout }) => {
   const [view, setView] = useState('dashboard'); // dashboard | form | analytics
+  // Note: For now, logs are still kept in localStorage to prevent data shape mismatch 
+  // with the simple backend we built. We will update the backend model in the future.
   const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('penalytics_logs')) || []);
 
   useEffect(() => localStorage.setItem('penalytics_logs', JSON.stringify(logs)), [logs]);
 
-  const handleSave = (newLog) => {
+  const handleSave = async (newLog) => {
+    // In the future: await axios.post(`${API_URL}/logs/add`, newLog, { headers: { Authorization: `Bearer ${token}` } });
     setLogs([newLog, ...logs]);
     setView('dashboard');
   };
@@ -260,8 +335,6 @@ export default function App() {
       setLogs(logs.filter(log => log.id !== id));
     }
   };
-
-  if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
 
   if (view === 'analytics') {
     return (
@@ -276,9 +349,12 @@ export default function App() {
       
       {view === 'dashboard' && (
         <>
-          <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-8 tracking-tight drop-shadow-sm">
-            Penalytics 🍭
-          </h1>
+          <div className='flex justify-between w-full max-w-md items-center mb-8'>
+             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 tracking-tight drop-shadow-sm">
+              Penalytics 🍭
+            </h1>
+            <button onClick={onLogout} className="text-xs font-bold text-slate-400 bg-white/50 px-3 py-1 rounded-full hover:bg-red-100 hover:text-red-500 transition">Logout</button>
+          </div>
           
           <div className="flex gap-4 mb-12">
             <button 
@@ -332,5 +408,26 @@ export default function App() {
 
       {view === 'form' && <LogForm onSave={handleSave} onCancel={() => setView('dashboard')} />}
     </div>
+  );
+};
+
+// --- Main App Router ---
+
+export default function App() {
+  const [token, setToken] = useState(localStorage.getItem('penalytics_token'));
+
+  const handleLogout = () => {
+    setToken(null);
+    localStorage.removeItem('penalytics_token');
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={!token ? <Login setToken={setToken} /> : <Navigate to="/" />} />
+        <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
+        <Route path="/" element={token ? <Dashboard token={token} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
